@@ -1,5 +1,12 @@
-
 # Voice Transcription App
+
+**Important:**
+- You must create a `.env` file in the `server` directory with your OpenAI API key:
+  ```
+  OPENAI_API_KEY=your_actual_api_key_here
+  ```
+- Start the backend server (`cd server && npm install && npm run dev`) and the frontend (`npm install && npm run dev`) in separate terminals.
+- The frontend will proxy `/api` requests to the backend automatically during development.
 
 A beautiful single-page application that converts .m4a voice notes into clean, readable text using OpenAI's Whisper API.
 
