@@ -78,12 +78,44 @@ const TranscriptionApp = () => {
         body: formData,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Transcription failed');
+        // Handle different error statuses
+        if (response.status === 404) {
+          throw new Error('Transcription service not available. Please make sure the server is running.');
+        }
+        
+        // Try to get error message from response
+        let errorMessage = 'Transcription failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON, use status text
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // Check if response has content
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      if (!responseText) {
+        throw new Error('Empty response from server');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', responseText);
+        throw new Error('Invalid response format from server');
+      }
+
       console.log('Transcription completed:', data.text);
 
       setState(prev => ({
