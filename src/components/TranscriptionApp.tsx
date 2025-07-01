@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -8,12 +7,28 @@ import FileDropzone from './FileDropzone';
 import AudioPlayer from './AudioPlayer';
 import TranscriptDisplay from './TranscriptDisplay';
 
+interface Utterance {
+  id: string;
+  speaker: string;
+  text: string;
+  start: number;
+  end: number;
+}
+
 interface TranscriptionState {
   file: File | null;
   audioUrl: string | null;
   transcript: string | null;
+  utterances: Utterance[];
   isTranscribing: boolean;
   isPlaying: boolean;
+}
+
+interface CleanedTranscriptState {
+  cleanedTranscript: string | null;
+  isRenaming: boolean;
+  error: string | null;
+  cached: boolean;
 }
 
 const TranscriptionApp = () => {
@@ -22,8 +37,15 @@ const TranscriptionApp = () => {
     file: null,
     audioUrl: null,
     transcript: null,
+    utterances: [],
     isTranscribing: false,
     isPlaying: false,
+  });
+  const [cleanedState, setCleanedState] = useState<CleanedTranscriptState>({
+    cleanedTranscript: null,
+    isRenaming: false,
+    error: null,
+    cached: false,
   });
 
   const handleFileSelect = (file: File) => {
@@ -47,6 +69,7 @@ const TranscriptionApp = () => {
       file,
       audioUrl,
       transcript: null, // Reset transcript when new file is selected
+      utterances: [], // Reset utterances
     }));
 
     toast({
@@ -89,6 +112,7 @@ const TranscriptionApp = () => {
       setState(prev => ({
         ...prev,
         transcript: data.text,
+        utterances: data.utterances || [],
         isTranscribing: false,
       }));
 
@@ -126,6 +150,94 @@ const TranscriptionApp = () => {
       });
     }
   };
+
+  const handleRenameSpeakers = async () => {
+    if (!state.utterances.length) {
+      toast({
+        title: 'No speaker-labeled transcript',
+        description: 'Transcribe an audio file with speaker diarization first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setCleanedState({ cleanedTranscript: null, isRenaming: true, error: null, cached: false });
+    try {
+      const response = await fetch('/api/rename-speakers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ utterances: state.utterances }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Speaker renaming failed');
+      }
+      const data = await response.json();
+      setCleanedState({
+        cleanedTranscript: data.transcript,
+        isRenaming: false,
+        error: null,
+        cached: !!data.cached,
+      });
+      toast({
+        title: 'Speaker names updated',
+        description: data.cached ? 'Used cached result.' : 'Speaker labels replaced with meaningful names.',
+      });
+    } catch (error) {
+      setCleanedState({ cleanedTranscript: null, isRenaming: false, error: error instanceof Error ? error.message : 'Unknown error', cached: false });
+      toast({
+        title: 'Speaker renaming failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Automatically trigger speaker renaming after utterances are set
+  useEffect(() => {
+    if (state.utterances.length > 0 && !cleanedState.cleanedTranscript && !cleanedState.isRenaming) {
+      handleRenameSpeakers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.utterances]);
+
+  // When cleaned transcript is ready, replace the current transcript
+  useEffect(() => {
+    if (cleanedState.cleanedTranscript) {
+      setState(prev => ({
+        ...prev,
+        transcript: '', // Remove plain text transcript
+        utterances: parseCleanedTranscriptToUtterances(cleanedState.cleanedTranscript),
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleanedState.cleanedTranscript]);
+
+  // Helper: Parse cleaned transcript back to utterances for formatting
+  function parseCleanedTranscriptToUtterances(transcript: string) {
+    // Remove any leading 'Transcript:' or similar heading
+    let cleaned = transcript.trim();
+    cleaned = cleaned.replace(/^(transcript:?|transcription:?)/i, '').trim();
+    // Remove any leading blank lines
+    cleaned = cleaned.replace(/^\n+/, '');
+    // Expecting format: Name: text\nName2: text2\n...
+    const lines = cleaned.split(/\n+/).filter(Boolean);
+    let utterances = [];
+    let idx = 0;
+    for (const line of lines) {
+      const match = line.match(/^(.*?):\s*(.*)$/);
+      if (match) {
+        utterances.push({
+          id: `cleaned-${idx}`,
+          speaker: match[1],
+          text: match[2],
+          start: 0,
+          end: 0,
+        });
+        idx++;
+      }
+    }
+    return utterances;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -190,9 +302,10 @@ const TranscriptionApp = () => {
       )}
 
       {/* Transcript Display */}
-      {state.transcript && (
+      {(state.transcript || state.utterances.length > 0) && (
         <TranscriptDisplay
-          transcript={state.transcript}
+          transcript={state.transcript || ''}
+          utterances={state.utterances}
           onCopy={handleCopyTranscript}
         />
       )}
