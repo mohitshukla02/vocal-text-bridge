@@ -1,12 +1,10 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import TranscriptionApp from '../components/TranscriptionApp';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      <TranscriptionApp />
     </div>
   );
 };
