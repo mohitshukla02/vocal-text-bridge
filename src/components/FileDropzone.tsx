@@ -1,8 +1,7 @@
-
 import React, { useCallback, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Upload, FileAudio } from 'lucide-react';
+import { Plus } from 'lucide-react';
+
+export const ACCEPTED_EXTENSIONS = ['.m4a', '.mp4', '.mp3', '.wav', '.ogg', '.opus'];
 
 interface FileDropzoneProps {
   onFileSelect: (file: File) => void;
@@ -21,70 +20,47 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ onFileSelect }) => {
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      // Pass through whatever was dropped (even a mismatched extension) so the
+      // caller's validation can report exactly what's wrong, instead of
+      // silently doing nothing when nothing in the drop looks like audio.
+      const file = e.dataTransfer.files[0];
+      if (file) onFileSelect(file);
+    },
+    [onFileSelect]
+  );
 
-    const files = Array.from(e.dataTransfer.files);
-    const m4aFile = files.find(file => 
-      file.name.toLowerCase().endsWith('.m4a') || file.type === 'audio/mp4'
-    );
-
-    if (m4aFile) {
-      onFileSelect(m4aFile);
-    }
-  }, [onFileSelect]);
-
-  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onFileSelect(file);
-    }
-  }, [onFileSelect]);
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) onFileSelect(file);
+      e.target.value = ''; // allow re-selecting the same file
+    },
+    [onFileSelect]
+  );
 
   return (
     <div
-      className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
-        isDragOver
-          ? 'border-amber-400 bg-amber-50 scale-105'
-          : 'border-amber-300 bg-amber-50/30 hover:bg-amber-50/50'
+      className={`relative flex items-center gap-3 rounded-sm border px-4 py-3 transition-colors ${
+        isDragOver ? 'border-primary bg-secondary/60' : 'border-border bg-card hover:bg-secondary/30'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col items-center gap-4">
-        <div className={`p-4 rounded-full transition-all duration-300 ${
-          isDragOver 
-            ? 'bg-amber-500 text-white scale-110' 
-            : 'bg-amber-100 text-amber-600'
-        }`}>
-          <FileAudio className="w-8 h-8" />
-        </div>
-        
-        <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Drop your .m4a file here
-          </h3>
-          <p className="text-gray-600 mb-4">
-            or click to browse and select your voice note
-          </p>
-        </div>
-
-        <Button
-          variant="outline"
-          className="border-amber-300 text-amber-700 hover:bg-amber-100 hover:border-amber-400 transition-colors"
-        >
-          <Upload className="w-4 h-4 mr-2" />
-          Choose File
-        </Button>
-      </div>
-
+      <Plus className="h-4 w-4 shrink-0 text-primary" strokeWidth={2} />
+      <span className="text-sm text-foreground">Drop audio or browse</span>
+      <span className="ml-auto font-mono text-xs text-muted-foreground">
+        {ACCEPTED_EXTENSIONS.join(' ')}
+      </span>
       <input
         type="file"
-        accept=".m4a,audio/mp4"
+        accept={ACCEPTED_EXTENSIONS.join(',')}
         onChange={handleFileInput}
-        className="absolute inset-0 opacity-0 cursor-pointer"
+        className="absolute inset-0 cursor-pointer opacity-0"
       />
     </div>
   );

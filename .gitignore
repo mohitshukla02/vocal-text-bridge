@@ -15,6 +15,16 @@ dist
 dist-ssr
 *.local
 
+# Diarization comparison output (contains real transcript content)
+server/comparisons/
+
+# App data (transcript history, local settings)
+server/data/
+
+# Electron packaging output
+release/
+win-unpacked/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

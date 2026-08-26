@@ -68,42 +68,29 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, fileName }) => {
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Volume2 className="w-5 h-5 text-amber-600" />
-        <span className="text-gray-700 font-medium truncate">{fileName}</span>
+    <div className="flex items-center gap-3 rounded-sm border border-border bg-card px-4 py-2.5">
+      <Button
+        onClick={togglePlayPause}
+        size="sm"
+        variant="outline"
+        className="h-8 w-8 shrink-0 rounded-full p-0"
+      >
+        {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+      </Button>
+
+      <Volume2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <span className="w-40 shrink-0 truncate text-sm text-foreground">{fileName}</span>
+
+      <div className="h-1.5 flex-1 cursor-pointer rounded-full bg-secondary" onClick={handleProgressClick}>
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-150"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button
-          onClick={togglePlayPause}
-          size="sm"
-          className="bg-amber-500 hover:bg-amber-600 text-white rounded-full w-10 h-10 p-0"
-        >
-          {isPlaying ? (
-            <Pause className="w-4 h-4" />
-          ) : (
-            <Play className="w-4 h-4 ml-0.5" />
-          )}
-        </Button>
-
-        <div className="flex-1 space-y-2">
-          <div
-            className="h-2 bg-amber-100 rounded-full cursor-pointer"
-            onClick={handleProgressClick}
-          >
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-150"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-      </div>
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">
+        {formatTime(currentTime)} / {formatTime(duration)}
+      </span>
 
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
     </div>

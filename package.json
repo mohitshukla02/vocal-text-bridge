@@ -1,14 +1,46 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "echotron",
+  "productName": "Echotron",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron:dev": "concurrently -k -n VITE,SERVER,ELECTRON -c blue,green,magenta \"npm run dev\" \"npm --prefix server run dev\" \"npm run electron:wait\"",
+    "electron:wait": "wait-on http://localhost:8080 http://localhost:5075/api/health && cross-env ELECTRON_START_URL=http://localhost:8080 electron .",
+    "dist": "npm run build && cd server && npm install --omit=dev && cd .. && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.echotron.app",
+    "productName": "Echotron",
+    "asar": false,
+    "directories": {
+      "output": "C:/Users/mshuk/echotron-release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "!server/data/**",
+      "!server/comparisons/**",
+      "package.json",
+      "!node_modules/**"
+    ],
+    "win": {
+      "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -69,6 +101,10 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.4",
+    "cross-env": "^10.1.0",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
@@ -78,6 +114,7 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "wait-on": "^9.1.0"
   }
 }

@@ -18,7 +18,19 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				display: ['"Space Grotesk"', 'sans-serif'],
+				body: ['"Hind"', 'sans-serif'],
+				mono: ['"IBM Plex Mono"', 'monospace'],
+			},
 			colors: {
+				channel: {
+					1: 'hsl(var(--channel-1))',
+					2: 'hsl(var(--channel-2))',
+					3: 'hsl(var(--channel-3))',
+					4: 'hsl(var(--channel-4))',
+					5: 'hsl(var(--channel-5))',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -65,8 +77,8 @@ export default {
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				md: 'calc(var(--radius) - 1px)',
+				sm: 'calc(var(--radius) - 2px)'
 			},
 			keyframes: {
 				'accordion-down': {
